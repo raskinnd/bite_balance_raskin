@@ -6,7 +6,7 @@ module.exports = async function handler(req, res) {
     }
 
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`,
       { method: "GET" }
     );
 
