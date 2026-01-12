@@ -1,4 +1,4 @@
-// Vercel Serverless Function - Google Gemini (Free!)
+// Vercel Serverless Function for Recipe Generation - Google Gemini (Free!)
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    // Call Google Gemini API
+    // Call Google Gemini API for recipe generation
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
@@ -43,41 +43,22 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `אתה תזונאי מומחה. נתח את הארוחה הבאה לפי הקווים המנחים של הולטר סוכר.
+            text: `אתה שף מומחה. צור מתכון מפורט לארוחה הבאה: ${mealDescription}
 
-קווים מנחים:
+חשוב מאוד: המתכון חייב לעמוד בקווים המנחים הבאים:
 - תזונה מאוזנת עם עומס גליקמי נמוך
 - עדיפות למזון מלא ולא מעובד
 - איזון בין חלבונים, פחמימות מורכבות ושומנים בריאים
 - הימנעות ממזון מעובד, סוכר מוסף ופחמימות פשוטות
 
-ארוחה לניתוח: ${mealDescription}
+ספק מתכון הכולל:
+1. שם המנה
+2. זמן הכנה
+3. מרכיבים (כמויות מדויקות)
+4. הוראות הכנה צעד אחר צעד
+5. טיפים תזונתיים
 
-אנא ספק ניתוח מפורט בפורמט הבא בעברית (השתמש באימוג'ים):
-
-1. תיאור הארוחה
-2. דירוג כללי: [💫/⭐] - [אחוז] - [תיאור]
-3. האם כדאי לאכול: [Always ✅ / Sometimes ⚖️ / Never ❌]
-4. סיבת הדירוג (פסקה קצרה)
-5. פרמטרים של מזון:
-   - עומס גליקמי: [✅ נמוך / ⚠️ בינוני / 🚫 גבוה]
-   - גודל מנה: [🍽️ תיאור]
-   - איזון מקרו-נוטריאנטים: [תיאור]
-6. נוטריאנטים משוערים:
-   - אנרגיה: [קלוריות] קלוריות
-   - חלבון: [גרם]ג
-   - פחמימות: [גרם]ג
-   - סיבים תזונתיים: [רמה]
-   - שומנים: [גרם]ג
-   - שומן רווי: [רמה]
-   - נתרן: [כמות]
-7. תחליפים מומלצים (3-4 אפשרויות מרכזיות בלבד)
-8. נימוק לארוחה הבאה (שורה-שורה וחצי)
-9. המלצות לארוחה הבאה (3 אפשרויות):
-   - אופציה צמחונית: [תיאור]
-   - אופציה בשרית: [תיאור]
-   - אופציה דגים: [תיאור]
-10. סיכום והמלצות (2-3 נקודות)`
+וודא שכל המרכיבים מופיעים ברשימת המזונות המותרים!`
           }]
         }]
       })
@@ -89,13 +70,13 @@ export default async function handler(req, res) {
       throw new Error(data.error?.message || 'API request failed');
     }
 
-    // Extract text from Gemini response
-    const analysis = data.candidates[0].content.parts[0].text;
+    // Extract recipe from Gemini response
+    const recipe = data.candidates[0].content.parts[0].text;
 
-    // Return the analysis
+    // Return the recipe
     res.status(200).json({
       success: true,
-      analysis: analysis
+      recipe: recipe
     });
 
   } catch (error) {
