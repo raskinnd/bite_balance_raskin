@@ -1,4 +1,5 @@
 module.exports = async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -7,24 +8,29 @@ module.exports = async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
+  // Preflight
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
+  // Only POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ success: false, error: 'Method not allowed' });
+    return;
   }
 
   try {
-    const { mealDescription } = req.body;
+    const { mealDescription } = req.body || {};
     if (!mealDescription) {
-      return res.status(400).json({ error: 'Missing meal description' });
+      res.status(400).json({ success: false, error: 'Missing meal description' });
+      return;
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured' });
+      res.status(500).json({ success: false, error: 'API key not configured' });
+      return;
     }
 
     const response = await fetch(
@@ -45,17 +51,43 @@ module.exports = async function handler(req, res) {
               ],
             },
           ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 900,
+          },
         }),
       }
     );
 
     const data = await response.json();
-    const analysis = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!analysis) throw new Error('No analysis returned');
+
+    // חשוב: נראה את המבנה שחוזר בפועל
+    console.log('Gemini status:', response.status);
+    console.log('Gemini raw response:', JSON.stringify(data, null, 2));
+
+    if (!response.ok) {
+      throw new Error(data?.error?.message || `API request failed (status ${response.status})`);
+    }
+
+    // חילוץ טקסט בצורה עמידה
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const analysis = parts
+      .map((p) => p?.text)
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+
+    if (!analysis) {
+      // לעזור בדיבוג: להראות מה כן הגיע
+      throw new Error('No analysis returned');
+    }
 
     res.status(200).json({ success: true, analysis });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Analyze error:', error);
+    res.status(500).json({
+      success: false,
+      error: error?.message || 'Internal server error',
+    });
   }
 };
