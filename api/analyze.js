@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
     }
 
     const model = "models/gemini-2.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1/${model}:generateContent?key=${apiKey}`;
 
     // Timeout guard
     const controller = new AbortController();
